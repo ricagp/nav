@@ -11,7 +11,7 @@ private:
     SSD1306AsciiWire oled;
     uint8_t i2cAddress;
     char lines[4][22];     // Búfer para lo que queremos mostrar
-    char lastLines[4][22]; // Búfer para evitar parpadeos (flickering-free)
+    char lastLines[4][22]; // Búfer para evitar parpadeos
 
 public:
     Ssd1306Manager(uint8_t addr = 0x3C) {
@@ -19,6 +19,7 @@ public:
     }
 
     void begin() override {
+        // Inicialización usando tipografía estándar de ASCII
         oled.begin(&Adafruit128x64, i2cAddress);
         oled.setFont(System5x7);
         clear();
@@ -39,12 +40,14 @@ public:
         }
     }
 
+    // El update inteligente evita parpadeos reescribiendo solo lo que cambia
     void update() override {
         for (uint8_t i = 0; i < 4; i++) {
             if (strcmp(lines[i], lastLines[i]) != 0) {
-                oled.setCursor(0, i * 2);
-                oled.print(F("                    ")); 
-                oled.setCursor(0, i * 2);
+                // SSD1306Ascii usa filas lógicas de texto (0 a 3 o 7 según fuente)
+                oled.setCursor(0, i * 2); 
+                oled.print(F("                    ")); // Limpia la línea con espacios
+                oled.setCursor(0, i * 2); 
                 oled.print(lines[i]);
                 strcpy(lastLines[i], lines[i]);
             }
