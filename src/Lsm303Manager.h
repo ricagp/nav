@@ -13,9 +13,9 @@ private:
     const uint8_t ACCEL_ADDR = 0x18;
     const uint8_t MAG_ADDR   = 0x1E;
     
-    static constexpr uint16_t CALIBRATION_SAMPLES = 20;
+    static constexpr uint16_t CALIBRATION_SAMPLES = 100;
 
-    Lsm303CalibrationInt calibInt;
+    Lsm303AccelCalibration calibInt;
     Lsm303FloatData calibFloat = {0};
 
     Lsm303RawData rawData;
@@ -68,7 +68,10 @@ public:
         Wire.beginTransmission(MAG_ADDR);   Wire.write(0x02); Wire.write(0x00); Wire.endTransmission();
         delay(500);
 
+        // Limpiamos los acumuladores pero preservamos o reasignamos las cabeceras de control
         memset(&calibInt, 0, sizeof(calibInt));
+        calibInt.type = TYPE_CALIBRATION_ACCEL;
+        calibInt.firmwareVersion = 1;
         calibInt.samples = CALIBRATION_SAMPLES;
 
         int16_t temp_ax, temp_ay, temp_az;
@@ -89,13 +92,14 @@ public:
     }
 
     void update() override {
+        rawData.timestamp = millis(); // Corregido: usa rawData en lugar de lastRawData
         readAccelRaw(rawData.ax, rawData.ay, rawData.az);
         readMagRaw(rawData.mx, rawData.my, rawData.mz);
     }
 
     // --- Getters de Datos Crudos y Calibración ---
     const Lsm303RawData& getRawData() const { return rawData; }
-    const Lsm303CalibrationInt& getCalibrationInt() const { return calibInt; }
+    const Lsm303AccelCalibration& getCalibrationInt() const { return calibInt; }
     const Lsm303FloatData& getCalibrationFloat() const { return calibFloat; }
 
     // --- Getters en Cascada devolviendo Lsm303FloatData por valor ---
