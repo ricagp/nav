@@ -5,7 +5,6 @@
 #include "SensorTypes.h"
 #include <Arduino.h>
 #include <Wire.h>
-#include <math.h>
 #include <string.h>
 
 class Lsm303Manager : public IUpdatable {
@@ -63,9 +62,22 @@ private:
     }
 
 public:
-    void begin() override {
-        Wire.beginTransmission(ACCEL_ADDR); Wire.write(0x20); Wire.write(0x27); Wire.endTransmission();
-        Wire.beginTransmission(MAG_ADDR);   Wire.write(0x02); Wire.write(0x00); Wire.endTransmission();
+bool begin() override {
+        Wire.beginTransmission(ACCEL_ADDR); 
+        Wire.write(0x20); 
+        Wire.write(0x27); 
+        uint8_t accelErr = Wire.endTransmission();
+
+        Wire.beginTransmission(MAG_ADDR);   
+        Wire.write(0x02); 
+        Wire.write(0x00); 
+        uint8_t magErr = Wire.endTransmission();
+
+        // Si alguno de los dos sensores no responde en I2C, devolvemos false
+        if (accelErr != 0 || magErr != 0) {
+            return false;
+        }
+
         delay(500);
 
         // Limpiamos los acumuladores pero preservamos o reasignamos las cabeceras de control
@@ -89,8 +101,10 @@ public:
         calibFloat.ax = (float)calibInt.sum_ax / f_samples;
         calibFloat.ay = (float)calibInt.sum_ay / f_samples;
         calibFloat.az = ((float)calibInt.sum_az / f_samples) - 1000.0f;
-    }
 
+        return true; // Inicialización y calibración completadas con éxito
+    }
+    
     void update() override {
         rawData.timestamp = millis(); // Corregido: usa rawData en lugar de lastRawData
         readAccelRaw(rawData.ax, rawData.ay, rawData.az);

@@ -10,7 +10,7 @@ enum PacketType : uint8_t {
     TYPE_CALIBRATION_ACCEL = 0x01,
     TYPE_CALIBRATION_MAG   = 0x02,
     TYPE_IMU_RAW           = 0x03,
-    TYPE_GPS               = 0x04
+    TYPE_GPS_RMC           = 0x04
 };
 
 // 1. Estructura de calibración exclusiva para el Acelerómetro
@@ -39,12 +39,16 @@ struct Lsm303RawData {
 };
 
 // 4. Datos de GPS
-struct GpsData {
-    uint8_t  type = TYPE_GPS;
-    uint32_t timestamp;
-    float    latitude;
-    float    longitude;
-    float    altitude;
+struct GpsRmcPacket {
+    uint8_t  type      = TYPE_GPS_RMC;
+    uint32_t timestamp = 0;           // millis() del ESP32
+    uint32_t gpsTime   = 0;           // Hora UTC formateada (hhmmsscc)
+    uint32_t date      = 0;           // Fecha DDMMAA
+    int32_t  lat       = 0;           // Latitud * 10^7
+    int32_t  lon       = 0;           // Longitud * 10^7
+    uint16_t speed     = 0;           // Velocidad sobre el fondo en nudos (multiplicada por 10 o en float)
+    uint16_t course    = 0;           // Rumbo (Course Over Ground) en grados (multiplicado por 10)
+    uint8_t  valid     = 0;           // 1 si es 'A' (activo/válido), 0 si es 'V' (void)
 };
 
 #pragma pack(pop)

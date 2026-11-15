@@ -18,7 +18,7 @@ public:
         i2cAddress = addr;
     }
 
-    void begin() override {
+    bool begin() override { // <--- Cambiado de void a bool
         // Inicialización usando tipografía estándar de ASCII
         oled.begin(&Adafruit128x64, i2cAddress);
         oled.setFont(System5x7);
@@ -26,6 +26,8 @@ public:
         for (int i = 0; i < 4; i++) {
             lastLines[i][0] = '\0';
         }
+        oled.clear();
+        return true; // <--- Añadido para cumplir con el tipo de retorno
     }
 
     void clear() {
