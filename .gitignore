@@ -3,7 +3,7 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
-data/*.bin
-data/*.csv
-data/*.kml
-data/*.html
+pc/telemetria
+pc/resultados
+pc/ghp
+data/config.ini

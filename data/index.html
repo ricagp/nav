@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISHA - Telemetría en Vivo</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; text-align: center; }
+        h1 { font-size: 22px; color: #38bdf8; margin-bottom: 20px; }
+        .card { background: #1e293b; padding: 15px; margin: 12px auto; border-radius: 12px; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .label { font-size: 14px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 32px; font-weight: bold; color: #4ade80; margin-top: 5px; }
+        .status { font-size: 12px; margin-bottom: 15px; color: #facc15; }
+    </style>
+</head>
+<body>
+    <h1>ISHA - Telemetría Náutica</h1>
+    <div id="status" class="status">Conectando al barco...</div>
+
+    <div class="card">
+        <div class="label">Velocidad</div>
+        <div id="spd" class="value">--.-- <span style="font-size:18px;">nudos</span></div>
+    </div>
+
+    <div class="card">
+        <div class="label">Rumbo (COG)</div>
+        <div id="cog" class="value">---.- <span style="font-size:18px;">&deg;</span></div>
+    </div>
+
+    <div class="card">
+        <div class="label">Distancia Acumulada</div>
+        <div id="nm" class="value">---- <span style="font-size:18px;">NM</span></div>
+    </div>
+
+    <div class="card">
+        <div class="label">Orientación (Roll / Pitch)</div>
+        <div id="imu" class="value" style="font-size:22px; color:#38bdf8;">-- / --</div>
+    </div>
+
+    <script>
+        let ws;
+        const statusEl = document.getElementById('status');
+
+        function connect() {
+            // Se conecta automáticamente al servidor WebSocket del ESP32 en el puerto 81
+            ws = new WebSocket('ws://' + window.location.hostname + ':81/');
+
+            ws.onopen = () => {
+                statusEl.innerText = "Conectado en tiempo real";
+                statusEl.style.color = "#4ade80";
+            };
+
+            ws.onclose = () => {
+                statusEl.innerText = "Desconectado. Reintentando...";
+                statusEl.style.color = "#f87171";
+                setTimeout(connect, 3000);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.spd !== undefined) document.getElementById('spd').innerHTML = data.spd.toFixed(1) + " <span style='font-size:18px;'>nudos</span>";
+                    if (data.cog !== undefined) document.getElementById('cog').innerHTML = data.cog.toFixed(1) + " <span style='font-size:18px;'>&deg;</span>";
+                    if (data.nm !== undefined) document.getElementById('nm').innerHTML = data.nm.toFixed(3) + " <span style='font-size:18px;'>NM</span>";
+                    if (data.roll !== undefined && data.pitch !== undefined) {
+                        document.getElementById('imu').innerText = data.roll.toFixed(1) + "° / " + data.pitch.toFixed(1) + "°";
+                    }
+                } catch (e) {
+                    console.error("Error al procesar JSON:", e);
+                }
+            };
+        }
+
+        connect();
+    </script>
+</body>
+</html>

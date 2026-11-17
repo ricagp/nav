@@ -4,24 +4,31 @@
 #include "Lsm303Manager.h"
 #include "GpsManager.h"
 #include "Ssd1306Manager.h"
+#include "WebServerManager.h"
+
+// --- Constante de refresco simbólica (configurable desde platformio.ini con build_flags) ---
+#ifndef DISPLAY_INTERVAL_MS
+#define DISPLAY_INTERVAL_MS 250
+#endif
+const unsigned long REFRESH_INTERVAL_MS = DISPLAY_INTERVAL_MS;
 
 // --- Instancias de los gestores del sistema ---
-MicroSdManager sd(5);          // Pin CS de la Tarjeta SD (ajustar según tu hardware)
+MicroSdManager sd(5);              // Pin CS de la Tarjeta SD
 Lsm303Manager lsm303Manager;
 GpsManager gpsManager;
-Ssd1306Manager oled(0x3C);     // Pantalla OLED I2C (dirección 0x3C por defecto)
+Ssd1306Manager oled(0x3C);         // Pantalla OLED I2C (dirección 0x3C por defecto)
+WebServerManager webServerManager; // Gestor de red Wi-Fi, LittleFS y WebSockets
 
 // --- Estructuras de datos para telemetría ---
 GpsRmcPacket gpsPacket;
 
-// --- Control de tiempos para actualización de pantalla (ej. cada 250 ms) ---
+// --- Control de tiempos ---
 unsigned long lastDisplayMillis = 0;
-const unsigned long DISPLAY_INTERVAL_MS = 250;
 
 void setup() {
     // 1. Puerto serie para depuración por consola
     Serial.begin(115200);
-    Wire.begin(); // O Wire.begin(SDA_PIN, SCL_PIN);
+    Wire.begin(); // Inicializar bus I2C
     delay(1000);
     Serial.println("\n--- INICIANDO SISTEMA DE TELEMETRÍA MARINA ESP32 ---");
 
@@ -33,7 +40,7 @@ void setup() {
 
     // 3. Inicializar la Tarjeta SD y abrir el siguiente fichero de log automático
     if (!sd.begin()) {
-        Serial.println("[ERROR] No se pudo inicializar la Tarjeta SD.");
+        Serial.println("[SD] Error: No se pudo inicializar la tarjeta SD (Comprobar inserción).");
     } else {
         if (sd.openNextLog("/telemetria")) {
             Serial.println("[SD] Fichero de registro preparado para escritura.");
@@ -48,12 +55,17 @@ void setup() {
     } else {
         Serial.println("[IMU] Sensor LSM303 inicializado y calibrado correctamente.");
         
-        // Guardamos el paquete de calibración estática al principio del fichero binario
+        // Guardamos el paquete de calibración estática al principio del fichero binario (si la SD está activa)
         sd.writePacket(lsm303Manager.getCalibrationInt());
         sd.flush();
     }
 
-    // 5. Inicializar el GPS (Pines RX=16, TX=17, 9600 baudios)
+    // 5. Inicializar el servidor web, LittleFS y red Wi-Fi (lee config.ini)
+    if (!webServerManager.begin()) {
+        Serial.println("[ERROR] Fallo al iniciar WebServerManager / LittleFS.");
+    }
+
+    // 6. Inicializar el GPS (Pines RX=16, TX=17, 9600 baudios)
     gpsManager.begin(16, 17, 9600);
     Serial.println("[GPS] GpsManager iniciado. Esperando cobertura de satélites...");
 
@@ -68,65 +80,72 @@ void loop() {
     unsigned long currentMillis = millis();
 
     // =========================================================================
-    // A. ACTUALIZACIÓN CONTINUA DE LA IMU (Lectura interna en RAM)
+    // A. ACTUALIZACIÓN DE RED Y WEBSOCKETS (Atención fluida a clientes web)
+    // =========================================================================
+    webServerManager.update();
+
+    // =========================================================================
+    // B. ACTUALIZACIÓN CONTINUA DE LA IMU (Lectura interna en RAM)
     // =========================================================================
     lsm303Manager.update();
 
     // =========================================================================
-    // B. LECTURA Y REGISTRO CONDICIONAL POR CADA FIX VÁLIDO DEL GPS
+    // C. LECTURA Y REGISTRO CONDICIONAL POR CADA FIX VÁLIDO DEL GPS
     // =========================================================================
     if (gpsManager.update(gpsPacket)) {
-        // 1. Guardar el paquete de datos del GPS en la SD
+        // Guardar datos en la tarjeta SD
         sd.writePacket(gpsPacket);
-
-        // 2. Guardar los valores en crudo del compás y acelerómetro asociados a este instante
         sd.writePacket(lsm303Manager.getRawData());
-
-        // 3. Forzar el vaciado del búfer de la SD para asegurar persistencia
         sd.flush();
 
-        // 4. Mensaje de control en consola serie
-        Serial.printf("[LOG] GPS Válido | Hora: %u | Lat: %d | Lon: %d | Vel: %.1f | Rumbo: %.1f\n", 
-                    gpsPacket.gpsTime, 
-                    gpsPacket.lat, 
-                    gpsPacket.lon, 
-                    gpsPacket.speed / 10.0f, 
-                    gpsPacket.course / 10.0f);
+        Serial.printf("[LOG] GPS Trama recibida | Hora: %u | Estado: %c\n", 
+                    gpsPacket.gpsTime, gpsPacket.valid ? 'A' : 'V');
     }
 
     // =========================================================================
-    // C. ACTUALIZACIÓN DE LA PANTALLA OLED (Tasa de refresco controlada)
+    // D. ACTUALIZACIÓN UNIFICADA (OLED + WEBSOCKET cada REFRESH_INTERVAL_MS)
     // =========================================================================
-    if (currentMillis - lastDisplayMillis >= DISPLAY_INTERVAL_MS) {
+    if (currentMillis - lastDisplayMillis >= REFRESH_INTERVAL_MS) {
         lastDisplayMillis = currentMillis;
 
-        char buf[22];
-        const Lsm303RawData& raw = lsm303Manager.getRawData();
+        // 1. Obtener datos flotantes actuales de la IMU
         Lsm303FloatData floatData = lsm303Manager.getRawDataFloat();
 
-        // Línea 0: Posición GPS (Lat / Lon resumidas) o aviso de sin cobertura
+        // 2. Transmitir por WebSocket al móvil (JSON plano en pila, sin String dinámicos)
+        char jsonBuffer[256];
+        snprintf(jsonBuffer, sizeof(jsonBuffer),
+            "{\"spd\":%.1f,\"cog\":%.1f,\"lat\":%.7f,\"lon\":%.7f,\"nm\":%.3f,\"roll\":%.1f,\"pitch\":%.1f}",
+            gpsPacket.speed / 10.0f,
+            gpsPacket.course / 10.0f,
+            gpsPacket.lat / 10000000.0,
+            gpsPacket.lon / 10000000.0,
+            0.0f, // Total NM acumuladas
+            floatData.roll,
+            floatData.pitch
+        );
+        webServerManager.broadcast(jsonBuffer);
+
+        // 3. Actualizar la pantalla OLED de forma sincronizada
+        char buf[22];
         if (gpsPacket.valid == 1) {
             float latDeg = (float)gpsPacket.lat / 10000000.0f;
             float lonDeg = (float)gpsPacket.lon / 10000000.0f;
             snprintf(buf, sizeof(buf), "Lat:%.3f Lon:%.3f", latDeg, lonDeg);
         } else {
-            snprintf(buf, sizeof(buf), "GPS: Sin Fix (Void)");
+            snprintf(buf, sizeof(buf), "GPS: Buscando Fix...");
         }
         oled.setLine(0, buf);
 
-        // Línea 1: Rumbo y velocidad del GPS
         float gpsHeading = (float)gpsPacket.course / 10.0f;
         float gpsSpeed = (float)gpsPacket.speed / 10.0f;
         snprintf(buf, sizeof(buf), "Rumbo:%.1f Vel:%.1f", gpsHeading, gpsSpeed);
         oled.setLine(1, buf);
 
-        // Línea 2: Rumbo sin compensar y rumbo compensado (en grados)
         float uncompHeading = lsm303Manager.getRawDataFloat().heading;
         float compHeading = lsm303Manager.getCompensatedDataFloat().heading;
         snprintf(buf, sizeof(buf), "Unc:%.1f Comp:%.1f", uncompHeading, compHeading);
         oled.setLine(2, buf);
 
-        // Línea 3: Alabeo (Roll) y Cabeceo (Pitch)
         snprintf(buf, sizeof(buf), "Roll:%.1f P:%.1f", floatData.roll, floatData.pitch);
         oled.setLine(3, buf);
 
