@@ -3,6 +3,7 @@ import csv
 import argparse
 import math
 import json
+import os
 
 HOURS_OFFSET = 1  # 1 para invierno, 2 para verano en Madrid
 
@@ -18,7 +19,6 @@ def process_bearings(bearings):
     if not bearings:
         return 0.0, 0.0, 0.0
     
-    # Desenvolver ángulos (Unwrapping) para cálculo de mínimos y máximos reales cruzando el norte (360/0)
     unwrapped = [bearings[0]]
     for b in bearings[1:]:
         diff = b - unwrapped[-1]
@@ -32,7 +32,6 @@ def process_bearings(bearings):
     max_b = max(unwrapped) % 360.0
     min_b = min(unwrapped) % 360.0
     
-    # Media circular usando trigonometría para evitar errores cerca del norte
     sin_sum = sum(math.sin(math.radians(b)) for b in bearings)
     cos_sum = sum(math.cos(math.radians(b)) for b in bearings)
     mean_b = math.degrees(math.atan2(sin_sum, cos_sum)) % 360.0
@@ -81,7 +80,6 @@ def generate_interactive_html(html_filename, base_filename, blocks_data):
 
     const map = L.map('map').setView([blocks[0].init_lat, blocks[0].init_lon], 14);
 
-    // Capas base libres de Esri (sin restricciones de API Key)
     const esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
         maxZoom: 19,
         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
@@ -116,14 +114,12 @@ def generate_interactive_html(html_filename, base_filename, blocks_data):
 
         const color = getSpeedColor(b.mean_v);
 
-        // Trayectoria continua
         L.polyline([start, end], {{
             color: color,
             weight: 4,
             opacity: 0.85
         }}).addTo(map);
 
-        // Flecha de rumbo orientada
         const arrowIcon = L.divIcon({{
             className: 'boat-arrow',
             html: `<svg width="24" height="24" viewBox="0 0 24 24" style="transform: rotate(${{b.mean_b}}deg); filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.45));">
@@ -150,7 +146,6 @@ def generate_interactive_html(html_filename, base_filename, blocks_data):
         L.marker(start, {{ icon: arrowIcon }}).bindPopup(popupHtml).addTo(map);
     }});
 
-    // Marcadores INICIO / FIN
     const startBadge = L.divIcon({{
         html: '<div style="background:#16a34a;color:#fff;padding:2px 6px;border-radius:4px;font-weight:bold;font-size:11px;border:1px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);">INICIO</div>',
         className: '', iconSize: [46, 20], iconAnchor: [23, -8]
@@ -169,7 +164,6 @@ def generate_interactive_html(html_filename, base_filename, blocks_data):
         map.fitBounds(routeBounds, {{ padding: [30, 30] }});
     }}
 
-    // Leyenda
     const legend = L.control({{ position: 'bottomright' }});
     legend.onAdd = function() {{
         const div = L.DomUtil.create('div', 'legend');
@@ -192,17 +186,30 @@ def generate_interactive_html(html_filename, base_filename, blocks_data):
 
 
 def analyze_and_export_telemetry(base_filename):
+    # Limpiar extensión .bin si el usuario la incluyó al llamar al script
     if base_filename.lower().endswith(".bin"):
         base_filename = base_filename[:-4]
-        
-    filename = f"{base_filename}.bin"
-    print(f"--- ANALIZANDO Y GENERANDO TELEMETRÍA: {filename} ---\n")
     
-    calib_csv_name   = f"{base_filename}_calib.csv"
-    imu_csv_name     = f"{base_filename}_imu.csv"
-    gps_raw_csv_name = f"{base_filename}_gps_raw.csv"
-    gps_kml_name     = f"{base_filename}_gps_clean.kml"
-    gps_html_name    = f"{base_filename}_mapa.html"
+    # Extraer solo el nombre base si se pasó con ruta previa (ej: "telemetria/archivo" -> "archivo")
+    base_filename = os.path.basename(base_filename)
+        
+    # Definir y asegurar la creación de las carpetas solicitadas
+    dir_telemetria = "telemetria"
+    dir_resultados = "resultados"
+    dir_ghp = "ghp"
+
+    for folder in [dir_telemetria, dir_resultados, dir_ghp]:
+        os.makedirs(folder, exist_ok=True)
+
+    # Rutas completas de los archivos organizados en sus respectivas carpetas
+    filename         = os.path.join(dir_telemetria, f"{base_filename}.bin")
+    calib_csv_name   = os.path.join(dir_resultados, f"{base_filename}_calib.csv")
+    imu_csv_name     = os.path.join(dir_resultados, f"{base_filename}_imu.csv")
+    gps_raw_csv_name = os.path.join(dir_resultados, f"{base_filename}_gps_raw.csv")
+    gps_kml_name     = os.path.join(dir_resultados, f"{base_filename}_gps_clean.kml")
+    gps_html_name    = os.path.join(dir_ghp, f"{base_filename}_mapa.html")
+    
+    print(f"--- ANALIZANDO Y GENERANDO TELEMETRÍA: {filename} ---\n")
     
     packet_count = 0
     calib_count = 0
@@ -271,7 +278,6 @@ def analyze_and_export_telemetry(base_filename):
         hora_sin_seg = full_time[:5] if full_time and len(full_time) >= 5 else "00:00"
         timestamp = block[0]['timestamp']
         
-        # KML Placemark
         kml_content = f"""    <Placemark>
       <name>{hora_sin_seg}</name>
       <description><![CDATA[
@@ -294,7 +300,6 @@ def analyze_and_export_telemetry(base_filename):
     </Placemark>\n"""
         kml_file.write(kml_content)
 
-        # Datos para HTML
         blocks_list.append({
             "timestamp": timestamp,
             "hora": hora_sin_seg,
@@ -454,14 +459,14 @@ def analyze_and_export_telemetry(base_filename):
         print(f"  -> {imu_csv_name} ({imu_count} registros)")
         print(f"  -> {gps_raw_csv_name} ({gps_count} registros - completo)")
         print(f"  -> {gps_kml_name} ({gps_clean_count} puntos KML)")
-        print(f"  -> {gps_html_name} (Mapa interactivo limpio sin restricciones de API Key)")
+        print(f"  -> {gps_html_name} (Mapa interactivo)")
         print("==================================================")
 
     except FileNotFoundError:
-        print(f"[ERROR] No se pudo encontrar el fichero '{filename}'.")
+        print(f"[ERROR] No se pudo encontrar el fichero binario en '{filename}'.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analizador y exportador de telemetría marina (CSV, KML y HTML).")
-    parser.add_argument("fichero", help="Nombre base del fichero binario (ej: telemetria_17)")
+    parser.add_argument("fichero", help="Nombre base del fichero binario (ej: telemetria_17) o ruta relativa")
     args = parser.parse_args()
     analyze_and_export_telemetry(args.fichero)
