@@ -1,4 +1,13 @@
+
 # nav
+
+## Entorno
+
+.venv\Scripts\activate.bat
+pip install Jinja2    
+cd pc
+python telemetria.py telemetria_17.bin
+
 
 # Hardware
 
@@ -19,6 +28,12 @@
 ## 5Nov26
 
 1. Paso desde Ubuntu a Windows10
+
+# Pruebas y datos
+
+* telemetria_17.bin: Isha, salida del domingo 15
+* telemetria_20.bin: prueba duración batería: 18:39 a 04:29 (9h 50m), con pantalla y wifi activas
+
 
 # 15Nov
 
@@ -94,3 +109,99 @@ Gestiona la comunicación SPI y el almacenamiento persistente en tarjetas MicroS
 *  void flush();: Fuerza el vaciado físico del búfer de escritura de la tarjeta para asegurar la persistencia inmediata de los datos almacenados.
 *  void close();: Cierra de manera segura el archivo de registro activo notificando el estado por el puerto serie.
 *  ~MicroSdManager();: Destructor de la clase que invoca automáticamente el cierre del archivo activo para evitar fugas de recursos o corrupción de datos.
+
+## WebServerManager.h / WebServerManager.cpp (Clase WebServerManager)
+
+Gestiona el punto de acceso Wi-Fi del sistema, el sistema de ficheros interno (LittleFS para cargar la configuración desde config.ini y servir la interfaz estática desde index.html), un servidor HTTP integrado en el puerto 80 y un servidor de WebSockets en el puerto 81 para la transmisión de telemetría en tiempo real a los clientes conectados.
+
+* WebServerManager(): Constructor por defecto que inicializa el servidor web en el puerto 80, el servicio de WebSockets en el puerto 81, la potencia de transmisión de radio por defecto ($78$) y establece los valores iniciales por defecto para el SSID (ISHA_Boat_AP) y la contraseña.
+* bool begin() override;: Monta el sistema de ficheros LittleFS, carga la configuración de red y credenciales desde el archivo /config.ini, configura el microcontrolador en modo de Punto de Acceso (AP) aplicando los parámetros de red e inicia de forma simultánea el servidor HTTP y el de WebSockets.
+* void update() override;: Atiende de forma periódica las peticiones de los clientes HTTP entrantes (server.handleClient()) y mantiene operativo el bucle de eventos de los WebSockets (webSocket.loop()).
+* void stop();: Detiene el servidor web, apaga la interfaz Wi-Fi para ahorro de energía y desmonta el sistema de ficheros LittleFS de manera segura.
+* void broadcast(const char* payload);: Transmite de forma masiva (broadcast) una cadena de texto o paquete de datos a todos los clientes conectados a través del canal de WebSockets.bool 
+* loadConfiguration();: Analiza e interpreta el archivo de configuración estructurado en formato INI ubicado en la memoria flash (/config.ini), extrayendo parámetros de red como el SSID, la contraseña, la potencia de transmisión (tx_power), la dirección IP local, la puerta de enlace (gateway) y la máscara de subred (subnet).
+* void setupWebServer();: Configura las rutas del servidor HTTP (como la ruta raíz /), encargándose de buscar y transmitir de manera eficiente el archivo index.html alojado en LittleFS o emitir un error 404 en caso de ausencia.
+* static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);: Gestiona los eventos de conexión, desconexión y recepción de tramas de los clientes a través del canal bidireccional de WebSockets.
+* void trim(char* str);: Función auxiliar de limpieza encargada de eliminar espacios en blanco, tabulaciones y saltos de carro sobrantes en el procesamiento e interpretación de líneas de texto del archivo de configuración.
+
+
+## telemetria.py (Analizador y Exportador de Telemetría Marina)
+
+Script de procesamiento en Python estructurado bajo una arquitectura modular y de plantillas (mediante Jinja2), diseñado para deserializar los paquetes binarios de almacenamiento persistente (.bin), corregir trayectorias, calcular variables cinemáticas y náuticas avanzadas, y generar de forma automatizada informes de consola, archivos de intercambio (.csv, .kml) y mapas web interactivos autocontenidos.
+
+* haversine_distance(lat1, lon1, lat2, lon2): Calcula la distancia en línea recta sobre la superficie terrestre entre dos puntos geográficos asumiendo un modelo esférico (radio medio de $6371\text{ m}$).
+* process_bearings(bearings): Resuelve los saltos angulares en los cruces del norte magnético ($0^\circ/360^\circ$) aplicando un algoritmo de desenvolutura (unwrapping) y una media circular basada en trigonometría vectorial (senos y cosenos) para obtener rumbos mínimos, máximos y medios estables.
+* generate_interactive_html(html_filename, base_filename, blocks_data): Carga la plantilla de diseño externa map_template.html mediante Jinja2 para generar de forma automatizada un mapa web interactivo en la subcarpeta ghp/ basado en Leaflet.js, integrando capas base de Esri, balizamiento náutico de OpenSeaMap, rutas codificadas por color según rangos de velocidad y marcadores de posición interactivos con rumbos orientados.
+* analyze_and_export_telemetry(base_filename): Función principal de orquestación que gestiona la creación automática de subcarpetas del proyecto (telemetria/, resultados/, ghp/, templates/), lee y deserializa byte a byte el flujo binario según las etiquetas de paquete (0x01, 0x02, 0x03, 0x04), filtra datos anómalos y procesa bloques de navegación.
+* templates/map_template.html: Plantilla HTML/JS para la representación visual interactiva de la ruta y los metadatos de los tramos de navegación.
+* templates/kml_template.xml: Plantilla XML para la exportación de puntos de interés y metadatos estructurados compatibles con Google Earth en la carpeta de resultados.
+* templates/report_template.txt: Plantilla de texto plano con formato de tipo printf para la emisión estructurada del resumen ejecutivo de la sesión por la consola de comandos.
+
+# UI
+
+chrome://flags/#unsafely-treat-insecure-origin-as-secure
+http://192.168.4.1
+Habilitar y reiniciar
+
++--------------------------+-------------------------------------------------------------+
+| [ MENÚ TÁCTICO ]         | [ PANTALLA ACTIVA: Navegación Libre ]                       |
+|                          |                                                             |
+| > 1. Navegación libre    | +-----------------------------+-----------------------------+
+|   2. Salida (Pre-Start)  | | 2) SOG                      | 2) VMG                      |
+|   3. VMG & Rendimiento   | |    6.4 nudos                |    5.2 nudos                |
+|   4. Waypoints / Balizas | +-----------------------------+-----------------------------+
+|   5. Mapa y Laylines     | | 3) Lat                      | 3) Long                     |
+|                          | |    36° 43.245' N            |    004° 24.112' W           |
+|                          | +-----------------------------+-----------------------------+
+|                          | | 4) COG                      | 4) Compass                  |
+|                          | |    215°                     |    212° (MAG)               |
+|                          | +-----------------------------+-----------------------------+
+|                          | | 5) Marcación                | 5) Delta                    |
+|                          | |    045°                     |    -2° / min                |
+|                          | +-----------------------------+-----------------------------+
+|                          | | 6) Roll                     | 6) Pitch                    |
+|                          | |    +14.2° (Babor)           |    -1.5°                    |
+|                          | +-----------------------------+-----------------------------+
++--------------------------+-------------------------------------------------------------+
+
++--------------------------+-------------------------------------------------------------+
+| [ MENÚ TÁCTICO ]         | [ PANTALLA ACTIVA: Navegación Libre ]                       |
+|                          |                                                             |
+| > 1. Navegación libre    | +-----------------------------+-----------------------------+
+|   2. Salida (Pre-Start)  | | 2) SOG                      | 2) VMG                      |
+|   3. VMG & Rendimiento   | |    6.4 nudos                |    5.2 nudos                |
+|   4. Waypoints / Balizas | +-----------------------------+-----------------------------+
+|   5. Mapa y Laylines     | | 3) Lat                      | 3) Long                     |
+|                          | |    36° 43.245' N            |    004° 24.112' W           |
+|                          | +-----------------------------+-----------------------------+
+|                          | | 4) Cog     Brg (Marcación Fijada)   | 4) Delta (COG vs Brg)       |
+|                          | |    ---° (Absoluta)          |    ----                     |
+|                          | +-----------------------------+-----------------------------+
+|                          | | 5) Compass (Móvil)          | 5) Acción                   |
+|                          | |    ---° MAG                 |    [ Fija Marcación ]       |
+|                          | +-----------------------------+-----------------------------+
+|                          | | 6) Roll                     | 6) Pitch                    |
+|                          | |    +14.2° (Babor)           |    -1.5°                    |
+|                          | +-----------------------------+-----------------------------+
++--------------------------+-------------------------------------------------------------+
+
++--------------------------+-------------------------------------------------------------+
+| [ TACTICAL MENU ]        | [ ACTIVE SCREEN: Free Navigation ]                          |
+|                          |                                                             |
+| > 1. Free Navigation     | +-----------------------------+-----------------------------+
+|   2. Pre-Start Line      | | 2) SOG (Speed)              | 2) VMG (Effective)          |
+|   3. VMG & Performance   | |    6.4 knots                |    5.2 knots                |
+|   4. Waypoints / Marks   | +-----------------------------+-----------------------------+
+|   5. Map & Laylines      | | 3) GPS Latitude             | 3) GPS Longitude            |
+|                          | |    36° 43.245' N            |    004° 24.112' W           |
+|  [ ☀️ Day Mode ]         | +-----------------------------+-----------------------------+
+|  [ 🌙 Night Mode ]       | | 4) COG (GPS Course)         | 4) Brg (Locked & Delta)     |
+|  [ 💻 Dark Mode ]        | |    215.0° Abs               |    045° (-3°)               |
+|                          | +-----------------------------+-----------------------------+
+|                          | | 5) Mobile Compass (Alidade) | 5) Action                   |
+|                          | |    212° MAG                 |    [ Lock Bearing ]         |
+|                          | +-----------------------------+-----------------------------+
+|                          | | 6) Roll (Heel)              | 6) Pitch (Trim)             |
+|                          | |    -5.4° (Stbd) [Fondo 🟩]  |    -1.5° (Bow Down)         |
+|                          | +-----------------------------+-----------------------------+
++--------------------------+-------------------------------------------------------------+
