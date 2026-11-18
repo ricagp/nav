@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Telemetria - {{ base_filename }}</name>
+    {% for block in blocks_data %}
+    <Placemark>
+      <name>{{ block.hora }}</name>
+      <description><![CDATA[
+        <b>Timestamp (ms):</b> {{ block.timestamp }}<br/>
+        <b>Vel. Máxima:</b> {{ block.max_v }} nudos<br/>
+        <b>Vel. Media:</b> {{ block.mean_v }} nudos<br/>
+        <b>Distancia Tramo:</b> {{ block.dist_nm }} NM
+      ]]></description>
+      <Point>
+        <coordinates>{{ block.init_lon }},{{ block.init_lat }},0</coordinates>
+      </Point>
+    </Placemark>
+    {% endfor %}
+  </Document>
+</kml>

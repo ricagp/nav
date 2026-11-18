@@ -1,0 +1,19 @@
+==================================================
+          RESUMEN DE ESTADÍSTICAS DE TRAYECTO     
+==================================================
+ Paquetes totales procesados : {{ packet_count }}
+ Primera hora local válida   : {{ first_valid_local }}
+ Última hora local válida    : {{ last_valid_local }}
+ Tiempo transcurrido         : {{ elapsed_str }}
+ Distancia total estimada    : {{ "%.3f"|format(total_distance_km) }} km ({{ "%.1f"|format(total_distance_meters) }} metros)
+--------------------------------------------------
+ Velocidad MÁXIMA            : {{ "%.1f"|format(max_speed) }} nudos (a las {{ max_speed_time }} Local)
+ Velocidad MÍNIMA            : {{ "%.1f"|format(min_speed) }} nudos (a las {{ min_speed_time }} Local)
+==================================================
+ FICHEROS GENERADOS:
+  -> {{ calib_csv_name }} ({{ calib_count }} registros)
+  -> {{ imu_csv_name }} ({{ imu_count }} registros)
+  -> {{ gps_raw_csv_name }} ({{ gps_count }} registros - completo)
+  -> {{ gps_kml_name }} ({{ gps_clean_count }} puntos KML)
+  -> {{ gps_html_name }} (Mapa interactivo Jinja2)
+==================================================

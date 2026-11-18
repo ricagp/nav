@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telemetría Náutica - {{ base_filename }}</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        #map { width: 100%; height: 100%; }
+        .legend {
+            background: rgba(255, 255, 255, 0.92);
+            padding: 10px 14px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .legend-title { font-weight: bold; margin-bottom: 4px; color: #1e293b; }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .color-box { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+        .popup-table { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 4px; }
+        .popup-table td { padding: 3px 6px; border-bottom: 1px solid #e2e8f0; }
+        .popup-table td:first-child { font-weight: 600; color: #475569; }
+        .popup-header { font-size: 14px; font-weight: bold; color: #0f172a; border-bottom: 2px solid #0284c7; padding-bottom: 4px; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+    const blocks = {{ blocks_json | safe }};
+
+    const map = L.map('map').setView([blocks[0].init_lat, blocks[0].init_lon], 14);
+
+    const esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+    }).addTo(map);
+
+    const openSeaMap = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenSeaMap'
+    }).addTo(map);
+
+    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: '&copy; Esri'
+    });
+
+    L.control.layers({ "Esri Calles": esriStreet, "Esri Satélite": satellite }, { "Balizamiento Náutico": openSeaMap }).addTo(map);
+
+    function getSpeedColor(speed) {
+        if (speed < 2.0) return '#3b82f6';      // Azul
+        if (speed < 4.5) return '#10b981';      // Verde
+        if (speed < 6.5) return '#f59e0b';      // Naranja
+        return '#ef4444';                       // Rojo
+    }
+
+    const routeBounds = [];
+
+    blocks.forEach((b, idx) => {
+        const start = [b.init_lat, b.init_lon];
+        const end = [b.final_lat, b.final_lon];
+        routeBounds.push(start);
+        if (idx === blocks.length - 1) routeBounds.push(end);
+
+        const color = getSpeedColor(b.mean_v);
+
+        L.polyline([start, end], {
+            color: color,
+            weight: 4,
+            opacity: 0.85
+        }).addTo(map);
+
+        const arrowIcon = L.divIcon({
+            className: 'boat-arrow',
+            html: `<svg width="24" height="24" viewBox="0 0 24 24" style="transform: rotate(${b.mean_b}deg); filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.45));">
+                     <polygon points="12,2 20,21 12,16 4,21" fill="${color}" stroke="#ffffff" stroke-width="1.5"/>
+                   </svg>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        });
+
+        const popupHtml = `
+            <div class="popup-header">Hora Local: ${b.hora}</div>
+            <table class="popup-table">
+                <tr><td>Vel. Media:</td><td><b>${b.mean_v.toFixed(1)} nudos</b></td></tr>
+                <tr><td>Vel. Máxima:</td><td>${b.max_v.toFixed(1)} nudos</td></tr>
+                <tr><td>Rumbo Medio:</td><td><b>${b.mean_b.toFixed(1)}°</b></td></tr>
+                <tr><td>Rango Rumbo:</td><td>${b.min_b.toFixed(1)}° – ${b.max_b.toFixed(1)}°</td></tr>
+                <tr><td>Dist. Tramo:</td><td>${b.dist_nm.toFixed(4)} NM</td></tr>
+                <tr><td>Dist. Total:</td><td><b>${b.cum_nm.toFixed(4)} NM</b></td></tr>
+                <tr><td>Pos. Inicial:</td><td>${b.init_lat.toFixed(6)}, ${b.init_lon.toFixed(6)}</td></tr>
+                <tr><td>Pos. Final:</td><td>${b.final_lat.toFixed(6)}, ${b.final_lon.toFixed(6)}</td></tr>
+            </table>
+        `;
+
+        L.marker(start, { icon: arrowIcon }).bindPopup(popupHtml).addTo(map);
+    });
+
+    const startBadge = L.divIcon({
+        html: '<div style="background:#16a34a;color:#fff;padding:2px 6px;border-radius:4px;font-weight:bold;font-size:11px;border:1px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);">INICIO</div>',
+        className: '', iconSize: [46, 20], iconAnchor: [23, -8]
+    });
+    const endBadge = L.divIcon({
+        html: '<div style="background:#dc2626;color:#fff;padding:2px 6px;border-radius:4px;font-weight:bold;font-size:11px;border:1px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);">FIN</div>',
+        className: '', iconSize: [34, 20], iconAnchor: [17, -8]
+    });
+
+    const first = blocks[0];
+    const last = blocks[blocks.length - 1];
+    L.marker([first.init_lat, first.init_lon], { icon: startBadge }).addTo(map);
+    L.marker([last.final_lat, last.final_lon], { icon: endBadge }).addTo(map);
+
+    if (routeBounds.length > 0) {
+        map.fitBounds(routeBounds, { padding: [30, 30] });
+    }
+
+    const legend = L.control({ position: 'bottomright' });
+    legend.onAdd = function() {
+        const div = L.DomUtil.create('div', 'legend');
+        div.innerHTML = `
+            <div class="legend-title">Velocidad (nudos)</div>
+            <div class="legend-item"><span class="color-box" style="background:#3b82f6"></span> &lt; 2.0 kn</div>
+            <div class="legend-item"><span class="color-box" style="background:#10b981"></span> 2.0 – 4.5 kn</div>
+            <div class="legend-item"><span class="color-box" style="background:#f59e0b"></span> 4.5 – 6.5 kn</div>
+            <div class="legend-item"><span class="color-box" style="background:#ef4444"></span> &gt; 6.5 kn</div>
+        `;
+        return div;
+    };
+    legend.addTo(map);
+</script>
+</body>
+</html>
