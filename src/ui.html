@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISHA - Tactical Regatta</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        /* TEMAS DE COLOR */
+        body.day-mode {
+            --bg-color: #e2e8f0;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --text-muted: #475569;
+            --border-color: #cbd5e1;
+            --topbar-bg: #ffffff;
+            --menu-hover: #f1f5f9;
+        }
+        body.night-mode {
+            --bg-color: #000000;
+            --card-bg: #140808;
+            --text-color: #ef4444;
+            --text-muted: #991b1b;
+            --border-color: #450a0a;
+            --topbar-bg: #140808;
+            --menu-hover: #290d0d;
+        }
+        body.dark-mode {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --topbar-bg: #1e293b;
+            --menu-hover: #334155;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        /* CONTENEDOR PRINCIPAL A PANTALLA COMPLETA */
+        main {
+            flex: 1;
+            padding: 14px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+        }
+
+        /* BARRA SUPERIOR CON TÍTULO DESPLEGABLE */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--topbar-bg);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            position: relative;
+            z-index: 50;
+        }
+
+        .screen-selector-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            font-size: 19px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .screen-selector-btn:active {
+            background: var(--menu-hover);
+        }
+        .chevron {
+            font-size: 14px;
+            color: #0284c7;
+        }
+
+        .connection-status { 
+            font-size: 13px; 
+            font-weight: 700; 
+            color: #16a34a; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            white-space: nowrap;
+        }
+        .led { width: 10px; height: 10px; background: #16a34a; border-radius: 50%; display: inline-block; }
+
+        /* MENÚ DESPLEGABLE FLOTANTE */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            width: 100%;
+            max-width: 340px;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+            padding: 12px;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 100;
+        }
+        .dropdown-menu.open {
+            display: flex;
+        }
+        .menu-header {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #0284c7;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+        }
+        .menu-item {
+            background: transparent;
+            color: var(--text-color);
+            border: none;
+            padding: 14px 14px;
+            text-align: left;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .menu-item:hover {
+            background: var(--menu-hover);
+        }
+        .menu-item.active {
+            background: #0284c7;
+            color: #ffffff;
+        }
+
+        .theme-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+            padding-top: 10px;
+            border-top: 2px solid var(--border-color);
+        }
+        .theme-btn {
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 10px 4px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+        }
+        .theme-btn.selected {
+            border: 2px solid #0284c7;
+        }
+
+        /* VISTAS / PANTALLAS */
+        .screen-view {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+        .screen-view.active {
+            display: flex;
+        }
+
+        /* GRID DE TARJETAS */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            flex: 1;
+        }
+        .card { 
+            background: var(--card-bg); 
+            padding: 14px 16px; 
+            border-radius: 12px; 
+            border: 2px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .label { 
+            font-size: 11px; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            letter-spacing: 0.7px; 
+            font-weight: 700;
+            margin-bottom: 4px; 
+        }
+        .value { 
+            font-size: 30px; 
+            font-weight: 800; 
+            color: var(--text-color); 
+            line-height: 1.15;
+        }
+        .unit { 
+            font-size: 15px; 
+            color: var(--text-muted); 
+            font-weight: 600; 
+        }
+        
+        /* BOTÓN DE ACCIÓN */
+        .btn-lock {
+            background: #0284c7;
+            color: #ffffff;
+            border: none;
+            padding: 14px 12px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 15px;
+            width: 100%;
+            height: 100%;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+        }
+        .btn-lock.locked {
+            background: #dc2626;
+        }
+
+        /* ESTADOS DINÁMICOS DE ESCORA (ROLL / HEEL) */
+        .card.heel-stbd {
+            background: #dcfce7;
+            border-color: #16a34a;
+        }
+        .card.heel-stbd .label,
+        .card.heel-stbd .value,
+        .card.heel-stbd .unit {
+            color: #14532d;
+        }
+
+        .card.heel-port {
+            background: #fee2e2;
+            border-color: #dc2626;
+        }
+        .card.heel-port .label,
+        .card.heel-port .value,
+        .card.heel-port .unit {
+            color: #7f1d1d;
+        }
+
+        /* PANTALLAS VACÍAS (PLACEHOLDER) */
+        .empty-screen {
+            flex: 1;
+            background: var(--card-bg);
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+        }
+        .empty-screen h2 {
+            margin: 0 0 8px 0;
+            color: var(--text-color);
+            font-size: 22px;
+        }
+    </style>
+</head>
+<body class="day-mode">
+
+    <main>
+        <!-- BARRA SUPERIOR CON TÍTULO DESPLEGABLE -->
+        <div class="top-bar">
+            <button class="screen-selector-btn" onclick="toggleMenu(event)">
+                <span id="current-screen-title">1. Free Navigation</span>
+                <span class="chevron">▼</span>
+            </button>
+
+            <div class="connection-status">
+                <span class="led"></span> <span>Online</span>
+            </div>
+
+            <!-- MENÚ DESPLEGABLE -->
+            <div id="dropdown-menu" class="dropdown-menu">
+                <div class="menu-header">⛵ ISHA TACTICAL — SCREENS</div>
+                <button class="menu-item active" onclick="switchScreen('nav', '1. Free Navigation', this)">1. Free Navigation</button>
+                <button class="menu-item" onclick="switchScreen('start', '2. Pre-Start Line', this)">2. Pre-Start Line</button>
+                <button class="menu-item" onclick="switchScreen('vmg', '3. VMG & Performance', this)">3. VMG &amp; Performance</button>
+                <button class="menu-item" onclick="switchScreen('marks', '4. Waypoints / Marks', this)">4. Waypoints / Marks</button>
+                <button class="menu-item" onclick="switchScreen('map', '5. Map & Laylines', this)">5. Map &amp; Laylines</button>
+
+                <div class="theme-row">
+                    <button id="btn-day" class="theme-btn selected" onclick="setTheme('day')">☀️ Day</button>
+                    <button id="btn-night" class="theme-btn" onclick="setTheme('night')">🌙 Night</button>
+                    <button id="btn-dark" class="theme-btn" onclick="setTheme('dark')">💻 Dark</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANTALLA 1: FREE NAVIGATION -->
+        <div id="screen-nav" class="screen-view active">
+            <div class="dashboard-grid">
+                <!-- Fila 2: SOG & VMG -->
+                <div class="card">
+                    <div class="label">SOG (Speed)</div>
+                    <div class="value">6.4 <span class="unit">kn</span></div>
+                </div>
+                <div class="card">
+                    <div class="label">VMG (Effective)</div>
+                    <div class="value">5.2 <span class="unit">kn</span></div>
+                </div>
+
+                <!-- Fila 3: Lat & Long -->
+                <div class="card">
+                    <div class="label">Latitude</div>
+                    <div class="value" style="font-size: 20px;">36° 43.245' N</div>
+                </div>
+                <div class="card">
+                    <div class="label">Longitude</div>
+                    <div class="value" style="font-size: 20px;">004° 24.112' W</div>
+                </div>
+
+                <!-- Fila 4: COG & Brg -->
+                <div class="card">
+                    <div class="label">COG (GPS)</div>
+                    <div class="value">042°</div>
+                </div>
+                <div class="card">
+                    <div class="label">Brg (Locked / Delta)</div>
+                    <div id="brg-display" class="value">045° <span class="unit">(-3°)</span></div>
+                </div>
+
+                <!-- Fila 5: Compass & Lock Button -->
+                <div class="card">
+                    <div class="label">Compass (Alidade)</div>
+                    <div class="value">046° <span class="unit">MAG</span></div>
+                </div>
+                <div class="card" style="padding: 10px;">
+                    <button id="btn-lock" class="btn-lock" onclick="toggleLock()">Lock Bearing</button>
+                </div>
+
+                <!-- Fila 6: Roll & Pitch -->
+                <div class="card heel-stbd">
+                    <div class="label">Roll (Heel - Stbd)</div>
+                    <div class="value">-12.4°</div>
+                </div>
+                <div class="card">
+                    <div class="label">Pitch (Trim)</div>
+                    <div class="value">-1.8°</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANTALLA 2: PRE-START LINE (VACÍA) -->
+        <div id="screen-start" class="screen-view">
+            <div class="empty-screen">
+                <h2>2. Pre-Start Line</h2>
+                <p>Empty layout ready for Start Timer, Line Bias &amp; Distance to Line.</p>
+            </div>
+        </div>
+
+        <!-- PANTALLA 3: VMG & PERFORMANCE (VACÍA) -->
+        <div id="screen-vmg" class="screen-view">
+            <div class="empty-screen">
+                <h2>3. VMG &amp; Performance</h2>
+                <p>Empty layout ready for Target VMG, Tack Angles &amp; Wind Shift indicator.</p>
+            </div>
+        </div>
+
+        <!-- PANTALLA 4: WAYPOINTS / MARKS (VACÍA) -->
+        <div id="screen-marks" class="screen-view">
+            <div class="empty-screen">
+                <h2>4. Waypoints / Marks</h2>
+                <p>Empty layout ready for Active Mark, DTW, BTW &amp; ETA.</p>
+            </div>
+        </div>
+
+        <!-- PANTALLA 5: MAP & LAYLINES (VACÍA) -->
+        <div id="screen-map" class="screen-view">
+            <div class="empty-screen">
+                <h2>5. Map &amp; Laylines</h2>
+                <p>Empty layout ready for Tactical Plotter &amp; Layline projections.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const dropdown = document.getElementById('dropdown-menu');
+
+        function toggleMenu(event) {
+            event.stopPropagation();
+            dropdown.classList.toggle('open');
+        }
+
+        // Cerrar el menú si se pulsa fuera de él
+        document.addEventListener('click', (event) => {
+            if (!dropdown.contains(event.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        // Cambiar de pantalla activa
+        function switchScreen(screenId, titleText, btnElement) {
+            document.querySelectorAll('.screen-view').forEach(el => el.classList.remove('active'));
+            document.getElementById('screen-' + screenId).classList.add('active');
+
+            document.getElementById('current-screen-title').innerText = titleText;
+
+            document.querySelectorAll('.menu-item').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            dropdown.classList.remove('open');
+        }
+
+        // Cambiar tema (Day / Night / Dark)
+        function setTheme(mode) {
+            document.body.className = mode + '-mode';
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('selected'));
+            document.getElementById('btn-' + mode).classList.add('selected');
+            dropdown.classList.remove('open');
+        }
+
+        // Simulación visual del botón Lock Bearing
+        let isLocked = true;
+        function toggleLock() {
+            const btn = document.getElementById('btn-lock');
+            const brg = document.getElementById('brg-display');
+            isLocked = !isLocked;
+            if (isLocked) {
+                btn.innerText = 'Unlock Bearing';
+                btn.classList.add('locked');
+                brg.innerHTML = '045° <span class="unit">(-3°)</span>';
+            } else {
+                btn.innerText = 'Lock Bearing';
+                btn.classList.remove('locked');
+                brg.innerHTML = '---° <span class="unit">(---°)</span>';
+            }
+        }
+    </script>
+
+</body>
+</html>

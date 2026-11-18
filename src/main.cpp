@@ -111,21 +111,21 @@ void loop() {
         // 1. Obtener datos flotantes actuales de la IMU
         Lsm303FloatData floatData = lsm303Manager.getRawDataFloat();
 
-        // 2. Transmitir por WebSocket al móvil (JSON plano en pila, sin String dinámicos)
+        // 2. Transmitir por WebSocket al móvil (JSON plano adaptado al nuevo sistema táctico)
         char jsonBuffer[256];
         snprintf(jsonBuffer, sizeof(jsonBuffer),
-            "{\"spd\":%.1f,\"cog\":%.1f,\"lat\":%.7f,\"lon\":%.7f,\"nm\":%.3f,\"roll\":%.1f,\"pitch\":%.1f}",
-            gpsPacket.speed / 10.0f,
-            gpsPacket.course / 10.0f,
-            gpsPacket.lat / 10000000.0,
-            gpsPacket.lon / 10000000.0,
-            0.0f, // Total NM acumuladas
-            floatData.roll,
-            floatData.pitch
+            "{\"spd\":%.1f,\"vmg\":%.1f,\"cog\":%.1f,\"lat\":%.7f,\"lon\":%.7f,\"roll\":%.1f,\"pitch\":%.1f}",
+            gpsPacket.speed / 10.0f,          // SOG en nudos
+            0.0f,                             // VMG (Sustituir por variable real de VMG si se calcula en firmware)
+            gpsPacket.course / 10.0f,         // COG del GPS
+            gpsPacket.lat / 10000000.0,       // Latitud
+            gpsPacket.lon / 10000000.0,       // Longitud
+            floatData.roll,                   // Escora (Roll / Heel)
+            floatData.pitch                   // Asiento (Pitch / Trim)
         );
         webServerManager.broadcast(jsonBuffer);
 
-        // 3. Actualizar la pantalla OLED de forma sincronizada
+        // 3. Actualizar la pantalla OLED de forma sincronizada (mantiene tu lógica actual)
         char buf[22];
         if (gpsPacket.valid == 1) {
             float latDeg = (float)gpsPacket.lat / 10000000.0f;
