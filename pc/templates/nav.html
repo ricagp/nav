@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISHA - Nav (Test)</title>
+    <link rel="stylesheet" href="core.css">
+    <link rel="stylesheet" href="nav.css">
+</head>
+<body class="day-mode">
+    <header class="test-header">
+        <h1>Nav</h1>
+        <div class="test-controls">
+            <button type="button" onclick="document.body.className='day-mode'; window.dispatchEvent(new Event('resize'));">Day</button>
+            <button type="button" onclick="document.body.className='night-mode'; window.dispatchEvent(new Event('resize'));">Night</button>
+            <button type="button" onclick="document.body.className='dark-mode'; window.dispatchEvent(new Event('resize'));">Dark</button>
+        </div>
+    </header>
+
+    <main>
+        <div id="screen-nav" class="screen-view active">
+            <div class="nav-grid">
+                <div class="nav-card">
+                    <div class="nav-label">Heading</div>
+                    <div id="nav-heading" class="nav-value-lg">---°</div>
+                    <div id="nav-gps" class="nav-unit">GPS: --.-----, --.-----</div>
+                </div>
+
+                <div class="nav-card">
+                    <div class="nav-label">SOG / Wind</div>
+                    <div id="nav-sog" class="nav-value-lg">--.- kn</div>
+                    <div id="nav-wind" class="nav-unit">---° / N/A</div>
+                </div>
+
+                <div class="nav-card nav-full-width">
+                    <div class="nav-label">Active Waypoint</div>
+                    <div id="nav-target-summary" class="nav-value-md">Target: None</div>
+                </div>
+
+                <div class="nav-card nav-full-width">
+                    <div class="nav-label">
+                        <span>Course &amp; Boat Map</span>
+                        <div class="nav-toolbar">
+                            <span id="nav-map-scale" class="nav-unit">1.0x</span>
+                            <button type="button" id="nav-zoom-in" class="nav-btn">+</button>
+                            <button type="button" id="nav-zoom-out" class="nav-btn">-</button>
+                            <button type="button" id="nav-zoom-reset" class="nav-btn">Reset</button>
+                        </div>
+                    </div>
+                    <div class="nav-map-wrapper">
+                        <canvas id="nav-map-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="nav-card nav-full-width">
+                    <div class="nav-label">Waypoints</div>
+                    <div id="nav-marks-list" class="nav-marks-list"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="test-footer">
+        <span>Modular test</span>
+        <span id="test-ws-state">WS: --</span>
+    </footer>
+
+    <script src="test_nav.js"></script>
+    <script src="core.js"></script>
+    <script src="nav.js"></script>
+</body>
+</html>

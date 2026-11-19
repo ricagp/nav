@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mapa — Regatta</title>
+    <link rel="stylesheet" href="core.css">
+    <link rel="stylesheet" href="map.css">
+</head>
+<body>
+    <main class="map-view">
+        <header class="map-toolbar" aria-label="Controles del mapa">
+            <div class="map-group" role="group" aria-label="Capas del mapa">
+                <button type="button" id="map-toggle-samples" class="map-btn is-active" aria-pressed="true">
+                    Muestras
+                </button>
+                <button type="button" id="map-toggle-waypoints" class="map-btn is-active" aria-pressed="true">
+                    Waypoints
+                </button>
+                <button type="button" id="map-toggle-boat" class="map-btn is-active" aria-pressed="true">
+                    Barco
+                </button>
+            </div>
+
+            <div class="map-group" role="group" aria-label="Zoom y centrado">
+                <button type="button" id="map-zoom-out" class="map-btn" aria-label="Alejar zoom">
+                    -
+                </button>
+                <span id="map-zoom-label" class="map-zoom-label">1.0x</span>
+                <button type="button" id="map-zoom-in" class="map-btn" aria-label="Acercar zoom">
+                    +
+                </button>
+                <button type="button" id="map-zoom-reset" class="map-btn">
+                    Centrar
+                </button>
+            </div>
+        </header>
+
+        <section class="map-canvas-wrapper" aria-label="Vista del campo de regata">
+            <canvas id="map-canvas"></canvas>
+        </section>
+    </main>
+
+    <script src="test_map.js"></script>
+    <script src="map.js"></script>
+</body>
+</html>

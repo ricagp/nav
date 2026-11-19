@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISHA - Wind (Test)</title>
+    <link rel="stylesheet" href="core.css">
+    <link rel="stylesheet" href="wind.css">
+</head>
+<body class="day-mode">
+    <header class="test-header">
+        <h1>Wind</h1>
+        <div class="test-controls">
+            <button type="button" onclick="document.body.className='day-mode'; window.dispatchEvent(new Event('resize'));">Day</button>
+            <button type="button" onclick="document.body.className='night-mode'; window.dispatchEvent(new Event('resize'));">Night</button>
+            <button type="button" onclick="document.body.className='dark-mode'; window.dispatchEvent(new Event('resize'));">Dark</button>
+        </div>
+    </header>
+
+    <main>
+        <div id="screen-wind" class="screen-view active">
+            <div class="wind-grid">
+                <div class="wind-card">
+                    <div class="wind-label">Wind Speed (-1 = N/A)</div>
+                    <div class="wind-input-row">
+                        <input id="wind-spd-input" class="wind-input" type="number" min="-1" max="120" step="1" value="-1">
+                        <button id="wind-btn-no-anem" class="wind-btn wind-secondary" type="button">-1</button>
+                    </div>
+                    <div id="wind-esp-pos" class="wind-unit">ESP32 GPS: --.----, --.----</div>
+                </div>
+
+                <div class="wind-card">
+                    <div class="wind-label">Phone Compass Dir</div>
+                    <div id="wind-compass-dir" class="wind-value-lg">---°</div>
+                    <div id="wind-compass-hint" class="wind-unit">Aim phone to vane &amp; press Fix</div>
+                </div>
+
+                <div class="wind-card wind-full-width">
+                    <button id="wind-btn-fix" class="wind-btn" type="button">Fix Wind Sample</button>
+                    <div id="wind-sync-status" class="wind-unit">Last txId: 0 | Local samples: 0</div>
+                </div>
+
+                <div class="wind-card wind-full-width">
+                    <div class="wind-label">
+                        <span>Wind &amp; Course Marks Map</span>
+                        <div class="wind-map-toolbar">
+                            <span id="wind-map-scale">1.0x</span>
+                            <button type="button" id="wind-zoom-in" class="wind-map-btn">+</button>
+                            <button type="button" id="wind-zoom-out" class="wind-map-btn">-</button>
+                            <button type="button" id="wind-zoom-reset" class="wind-map-btn">Reset</button>
+                        </div>
+                    </div>
+                    <div class="wind-map-wrapper">
+                        <canvas id="wind-map-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="wind-card wind-full-width">
+                    <div class="wind-label">
+                        <span>Local Wind Log</span>
+                        <span id="wind-local-count">0 samples</span>
+                    </div>
+                    <div class="wind-table-scroll">
+                        <table class="wind-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>txId</th>
+                                    <th>Lat (ESP32)</th>
+                                    <th>Lon (ESP32)</th>
+                                    <th>Dir (°)</th>
+                                    <th>Spd</th>
+                                    <th>UTC</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wind-log-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="test-footer">
+        <span>Modular test</span>
+        <span id="test-ws-state">WS: --</span>
+    </footer>
+
+    <script src="test_wind.js"></script>
+    <script src="core.js"></script>
+    <script src="wind.js"></script>
+    
+</body>
+</html>

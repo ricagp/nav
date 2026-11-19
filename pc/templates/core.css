@@ -1,0 +1,114 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-color);
+    color: var(--text-color);
+    transition: background 0.2s, color 0.2s;
+}
+
+/* TEMAS */
+body.day-mode {
+    --bg-color: #e2e8f0;
+    --card-bg: #ffffff;
+    --text-color: #0f172a;
+    --text-muted: #475569;
+    --border-color: #cbd5e1;
+    --topbar-bg: #ffffff;
+    --accent: #0284c7;
+    --grid-line: rgba(15, 23, 42, 0.12);
+    --mark-color: #d97706;
+}
+
+body.night-mode {
+    --bg-color: #000000;
+    --card-bg: #140808;
+    --text-color: #ef4444;
+    --text-muted: #991b1b;
+    --border-color: #450a0a;
+    --topbar-bg: #140808;
+    --accent: #dc2626;
+    --grid-line: rgba(239, 68, 68, 0.18);
+    --mark-color: #f59e0b;
+}
+
+body.dark-mode {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --text-color: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+    --topbar-bg: #1e293b;
+    --accent: #0284c7;
+    --grid-line: rgba(248, 250, 252, 0.12);
+    --mark-color: #f59e0b;
+}
+
+/* CONTENEDOR PRINCIPAL DE VISTAS */
+main {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.screen-view {
+    display: none;
+}
+
+.screen-view.active {
+    display: block;
+}
+
+/* CABECERA Y PIE TEMPORALES DE PRUEBA */
+header.test-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    background: var(--topbar-bg);
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+header.test-header h1 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.test-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.test-controls button {
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+footer.test-footer {
+    background: var(--topbar-bg);
+    color: var(--text-muted);
+    border-top: 2px solid var(--border-color);
+    padding: 8px 14px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+}

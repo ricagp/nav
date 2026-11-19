@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Waypoints — Regatta</title>
+    <link rel="stylesheet" href="core.css">
+    <link rel="stylesheet" href="wayp.css">
+</head>
+<body>
+    <main class="wayp-view">
+        <nav class="wayp-selector" aria-label="Seleccionar waypoint">
+            <button type="button" class="wayp-num-btn" data-wp-id="0">0</button>
+            <button type="button" class="wayp-num-btn" data-wp-id="1">1</button>
+            <button type="button" class="wayp-num-btn is-active" data-wp-id="2">2</button>
+            <button type="button" class="wayp-num-btn" data-wp-id="3">3</button>
+            <button type="button" class="wayp-num-btn" data-wp-id="4">4</button>
+            <button type="button" class="wayp-num-btn" data-wp-id="5">5</button>
+        </nav>
+
+        <header class="wayp-summary" aria-label="Detalle del waypoint seleccionado">
+            <span id="wayp-summary-title" class="wayp-summary-title">2: Pin</span>
+            <div class="wayp-summary-metrics">
+                <span id="wayp-summary-pos">—, —</span>
+                <span id="wayp-summary-brg">BRG —</span>
+                <span id="wayp-summary-dist">— NM</span>
+            </div>
+        </header>
+
+        <section class="wayp-rows" aria-label="Métodos de actualización de waypoint">
+            <!-- Fila 1: Posición actual del barco y botón Current -->
+            <div class="wayp-row">
+                <div class="wayp-row-col-left">
+                    <span class="wayp-label">Posición actual</span>
+                    <span id="wayp-current-pos" class="wayp-value">—, —</span>
+                </div>
+                <div class="wayp-row-col-right">
+                    <button type="button" id="wayp-btn-current" class="wayp-action-btn">Current</button>
+                </div>
+            </div>
+
+            <!-- Fila 2: Latitud y longitud manuales y botón Set -->
+            <div class="wayp-row">
+                <div class="wayp-row-col-left">
+                    <span class="wayp-label">Coordenadas manuales</span>
+                    <div class="wayp-inline-group">
+                        <input type="text" id="wayp-input-lat" class="wayp-input wayp-input-coord" aria-label="Latitud" placeholder="36°42.7'N">
+                        <input type="text" id="wayp-input-lon" class="wayp-input wayp-input-coord" aria-label="Longitud" placeholder="004°25.0'W">
+                    </div>
+                </div>
+                <div class="wayp-row-col-right">
+                    <button type="button" id="wayp-btn-set" class="wayp-action-btn">Set</button>
+                </div>
+            </div>
+
+            <!-- Fila 3: Distancia primero, luego orientación en vivo y botón Estimate -->
+            <div class="wayp-row">
+                <div class="wayp-row-col-left">
+                    <span class="wayp-label">1. Distancia · 2. Orientación</span>
+                    <div class="wayp-inline-group">
+                        <label for="wayp-input-dist" class="wayp-label">Dist</label>
+                        <input type="number" id="wayp-input-dist" class="wayp-input wayp-input-dist" step="0.01" min="0" value="0.15" aria-label="Distancia estimada">
+                        <select id="wayp-select-unit" class="wayp-select wayp-select-unit" aria-label="Unidad de distancia">
+                            <option value="NM" selected>NM</option>
+                            <option value="km">km</option>
+                            <option value="m">m</option>
+                        </select>
+                        <span class="wayp-value">Dir: <strong id="wayp-live-dir">214°</strong></span>
+                    </div>
+                </div>
+                <div class="wayp-row-col-right">
+                    <button type="button" id="wayp-btn-estimate" class="wayp-action-btn">Estimate</button>
+                </div>
+            </div>
+
+            <!-- Fila 4: Dos observaciones con Unlock/Lock y cálculo por Triangle -->
+            <div class="wayp-row">
+                <div class="wayp-row-col-left">
+                    <div class="wayp-tri-subrow">
+                        <span id="wayp-obs1-text" class="wayp-value">Obs 1: Sin fijar</span>
+                        <button type="button" id="wayp-btn-obs1" class="wayp-obs-btn">Unlock</button>
+                    </div>
+                    <div class="wayp-tri-subrow">
+                        <span id="wayp-obs2-text" class="wayp-value">Obs 2: Sin fijar</span>
+                        <button type="button" id="wayp-btn-obs2" class="wayp-obs-btn">Unlock</button>
+                    </div>
+                    <div class="wayp-tri-subrow">
+                        <span id="wayp-tri-calc-text" class="wayp-value">Calc: —</span>
+                    </div>
+                </div>
+                <div class="wayp-row-col-right">
+                    <button type="button" id="wayp-btn-triangle" class="wayp-action-btn">Triangle</button>
+                </div>
+            </div>
+        </section>
+
+        <div id="wayp-status" class="wayp-status" role="status" aria-live="polite"></div>
+    </main>
+
+    <script src="test_wayp.js"></script>
+    <script src="wayp.js"></script>
+</body>
+</html>

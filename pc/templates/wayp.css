@@ -1,0 +1,223 @@
+/* Estilos de la vista de gestión de waypoints (wayp.html / wayp.js) */
+
+.wayp-view {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    color: var(--text-color, #0f172a);
+    background: var(--bg-color, #f8fafc);
+}
+
+/* Selector numérico 0..5 */
+.wayp-selector {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+}
+
+.wayp-num-btn {
+    min-height: 44px;
+    border: 1px solid var(--border-color, #cbd5e1);
+    border-radius: 8px;
+    background: var(--surface-color, #ffffff);
+    color: inherit;
+    font: 700 15px/1 sans-serif;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.wayp-num-btn.is-active {
+    background: var(--accent, #0284c7);
+    border-color: var(--accent, #0284c7);
+    color: #ffffff;
+}
+
+/* Resumen del waypoint seleccionado */
+.wayp-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color, #cbd5e1);
+    border-radius: 8px;
+    background: var(--surface-color, #ffffff);
+    font-size: 13px;
+}
+
+.wayp-summary-title {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.wayp-summary-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 4 filas de dos columnas */
+.wayp-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wayp-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--border-color, #cbd5e1);
+    border-radius: 8px;
+    background: var(--surface-color, #ffffff);
+}
+
+.wayp-row-col-left {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.wayp-row-col-right {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    min-width: 96px;
+}
+
+.wayp-inline-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.wayp-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    opacity: 0.72;
+}
+
+.wayp-value {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    word-break: break-word;
+}
+
+.wayp-input,
+.wayp-select {
+    min-height: 38px;
+    padding: 6px 8px;
+    border: 1px solid var(--border-color, #cbd5e1);
+    border-radius: 6px;
+    background: var(--bg-color, #f8fafc);
+    color: inherit;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    box-sizing: border-box;
+}
+
+.wayp-input-coord {
+    flex: 1 1 110px;
+    min-width: 0;
+}
+
+.wayp-input-dist {
+    width: 86px;
+}
+
+.wayp-select-unit {
+    width: 72px;
+}
+
+/* Botones de acción en columna derecha */
+.wayp-action-btn {
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--accent, #0284c7);
+    border-radius: 8px;
+    background: var(--accent, #0284c7);
+    color: #ffffff;
+    font: 700 13px/1 sans-serif;
+    cursor: pointer;
+    touch-action: manipulation;
+    white-space: nowrap;
+}
+
+.wayp-action-btn:active {
+    transform: translateY(1px);
+}
+
+.wayp-action-btn.is-unlocked {
+    background: #d97706;
+    border-color: #d97706;
+    color: #ffffff;
+}
+
+.wayp-action-btn.is-locked {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #ffffff;
+}
+
+/* Fila 4: subfilas para Obs 1, Obs 2 y Triangle */
+.wayp-tri-subrow {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.wayp-tri-subrow + .wayp-tri-subrow {
+    padding-top: 6px;
+    border-top: 1px dashed var(--border-color, #cbd5e1);
+}
+
+.wayp-obs-btn {
+    min-height: 38px;
+    min-width: 88px;
+    padding: 0 10px;
+    border: 1px solid var(--border-color, #cbd5e1);
+    border-radius: 6px;
+    background: var(--bg-color, #f8fafc);
+    color: inherit;
+    font: 700 12px/1 sans-serif;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.wayp-status {
+    min-height: 18px;
+    padding: 0 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent, #0284c7);
+}
+
+@media (max-width: 480px) {
+    .wayp-row {
+        grid-template-columns: 1fr;
+    }
+
+    .wayp-row-col-right {
+        flex-direction: row;
+        justify-content: flex-end;
+        min-width: 0;
+    }
+
+    .wayp-tri-subrow {
+        grid-template-columns: 1fr auto;
+    }
+}
